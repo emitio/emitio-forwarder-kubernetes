@@ -1,2 +1,3 @@
-# emitio-forwarder-kubernetes
-automatically forwards kubernetes pod logs to an emitio agent
+# emitio-kubernetes-agent
+
+automatically forwards kubernetes pod logs to the emitio agent
