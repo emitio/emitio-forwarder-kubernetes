@@ -1,0 +1,84 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: emitio
+  namespace: kube-system
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: emitio
+  namespace: kube-system
+rules:
+  - apiGroups:
+    - "" # core aka legacy group
+    resources:
+    - pods
+    verbs:
+    - get
+    - list
+    - watch  
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: emitio
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: emitio
+subjects:
+- kind: ServiceAccount
+  name: emitio
+  namespace: kube-system
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: emitio
+  namespace: kube-system
+  labels:
+    k8s-app: emitio
+spec:
+  selector:
+    matchLabels:
+      name: emitio
+  template:
+    metadata:
+      labels:
+        name: emitio
+    spec:
+      containers:
+      - name: forwarder-kubernetes
+        image: emitio/emitio-forwarder-kubernetes:latest
+        resources:
+          limits:
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 200Mi
+        volumeMounts:
+        - name: varlog
+          mountPath: /var/log
+        - name: varlibdockercontainers
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+      - name: emitio-agent-mock
+        image: emitio/emitio-agent-mock:latest
+        resources:
+          limits:
+            memory: 200Mi
+          requests:
+            cpu: 100m
+            memory: 200Mi
+        ports:
+        - containerPort: 3648
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: varlog
+        hostPath:
+          path: /var/log
+      - name: varlibdockercontainers
+        hostPath:
+          path: /var/lib/docker/containers
